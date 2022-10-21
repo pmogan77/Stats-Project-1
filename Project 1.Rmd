@@ -1,0 +1,144 @@
+---
+title: "Project 1"
+output: html_document
+date: "2022-10-21"
+---
+```{r global_options, include=FALSE}
+#DO NOT EDIT THIS CHUNK OR ANYTHING ABOVE IT!
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F, tidy=T, tidy.opts=list(width.cutoff=50))
+library(tidyverse)
+library(knitr)
+library(readr)
+library(rvest)
+library(tidytext)
+library(lubridate)
+```
+
+```{r, include = FALSE}
+colorize <- function(x, color = "cornflowerblue") {
+  if (knitr::is_latex_output()) {
+    sprintf("\\textcolor{%s}{%s}", color, x)
+  } else if (knitr::is_html_output()) {
+    sprintf("<span style='color: %s;'>%s</span>", color,
+      x)
+  } else x
+}
+```
+## Praveen Mogan (pm32757), Sashank Meka (sm76742)
+## A Data Driven Anime Analysis
+**Dataset description**
+The anime dataset has a list of anime, synonyms, name in Japanese, name in English, a synopsis, type, number of episodes, current airing status, and the start air date.
+We acquired this dataset on [Kaggle](https://www.kaggle.com/datasets/harits/anime-database-2022).
+
+The My Anime List dataset has a list of anime, genre, rank, popularity, score, number of episodes, episode length, and release date.
+We acquired this dataset on [Kaggle](https://www.kaggle.com/datasets/aliibrahim10/anime-ratings).
+
+**Why these datasets?**
+While both datasets come from My Anime List, each dataset contains different information web-scraped from the website. Consequently, we hope to combine
+both datasets to create a more cohesive picture of each anime and its characteristics.
+
+**Potential relationships**
+One potential relationship we expect is that anime with a higher score (rating) tend to also place higher on the popularity list of anime.
+In other words, we expect the "best" anime to also be the most watched.
+
+Another relationship we hypothesize is that anime classified as TV will have a higher popularity than movies as they have plots that 
+continue to grow and expand over time.
+
+## Importing Datasets
+```{r}
+# Read both datasets from csv file
+anime = read.csv("./Anime.csv", header = TRUE, sep = ",")
+MAL_ratings = read.csv("./MALratings.csv", header = TRUE, sep = ",")
+```
+
+## Tidying Datasets
+As both datasets are already tidy, we do not need to tidy either of them.
+With the anime dataset, we can see that each row represents one observation (anime). 
+Furthermore, each variable (title, sysnonyms, synopsis, etc.) has its own column.
+Finally, each variable (title, sysnonyms, synopsis, etc.) for each anime has its own, unique cell.
+
+Similarly, with the MAL_ratings dataset, we can see that each row represents one observation (anime). 
+Furthermore, each variable (title, popularity, score, etc.) has its own column.
+Finally, each variable (title, popularity, score, etc.) for each anime has its own, unique cell.
+
+We will be returning to tidying functions later in the project.
+```{r}
+# Check that both datasets are tidy
+head(anime)
+head(MAL_ratings)
+```
+
+## Joining Datasets
+I joined the two datasets by the title column with an inner join. This means that the anime title must be in both datasets to create a row in the resulting dataset.
+This means that anime in one dataset and not in the other will not be recorded in the merged dataset.
+
+There are 21460 rows in the anime dataset.
+There are 20343 rows in the MAL_ratings dataset.
+There are 20156 rows in the merged dataset.
+
+In other words, 187 rows were dropped from the MAL_ratings dataset and 1304 rows were dropped from the anime dataset.
+One issue with the decreased number is that we lose data about anime that only appear in one of the datasets. 
+However, there is some added security in that every row within the merged dataset will pull all corresponding information from both original datasets.
+This means using inner_join will decrease the number of columns with null values.
+
+The anime dataset has a list of anime, synonyms, name in Japanese, name in English, a synopsis, type, number of episodes, current airing status, and the start air date.
+The My Anime List dataset has a list of anime, genre, rank, popularity, score, number of episodes, episode length, and release date.
+The merged dataset has an ID, title, synonyms, Japanese name, English name, synopsis, type, episodes.x, status, start_aired, end_aired, premeried, broadcast, producers, licensors, studios, source,
+genres.x, themes, demographics, duration_minutes, rating, score.x, scored users, ranked, popularity.x, members, favorites, genres.y, rank, popularity.y, score.y, episodes.y, episode.length, and release date.
+
+The columns in the merged dataset is simply the addition of the anime dataset and the MAL_ratings dataset.
+The anime dataset has 28 columns and the MAL_ratings dataset has 8 columns. This creates 36 columns, but since we merged by the title, the resulting dataset has 35 columns.
+```{r}
+# Determine number of rows in each dataset
+anime %>% nrow()
+MAL_ratings %>% nrow()
+
+# Determine number of columns in each dataset
+str(anime)
+str(MAL_ratings)
+```
+
+```{r}
+# Complete inner join
+mergedData = inner_join(anime, MAL_ratings, by="Title")
+
+# Determine number of columns in merged dataset
+str(mergedData)
+
+# Determine number of rows in merged datatset
+mergedData %>% nrow()
+View(mergedData)
+```
+
+## Wrangling
+One potential relationship we expect is that anime with a higher score (rating) tend to also place higher on the popularity list of anime.
+In other words, we expect the "best" anime to also be the most watched.
+
+Another relationship we hypothesize is that anime classified as TV will have a higher popularity than movies as they have plots that 
+continue to grow and expand over time.
+```{r}
+# Group by type of show
+getMinutes <- function(episodeLength) {
+    if(grepl("sec", episodeLength, fixed = TRUE)) {
+        0
+    } else if(grepl("hr", episodeLength, fixed = TRUE)) {
+        hourStop = gregexpr(" hr.", episodeLength)[[1]]
+        minStop = gregexpr(" min.", episodeLength)[[1]]
+        hours = strtoi(substring(episodeLength, 0, hourStop-1))
+        mins = strtoi(substring(episodeLength, hourStop+5, minStop-1))
+        mins + hours * 60
+    } else {
+        minStop = gregexpr(" min.", episodeLength)[[1]]
+        strtoi(substring(episodeLength, 0, minStop-1))
+    }
+}
+
+print(getMinutes("3 sec."))
+# mergedData %>% filter(Type != "Unknown") %>% group_by(Type) %>% summarise(avg_score = mean(Score.x, na.rm=TRUE)) %>% arrange(-avg_score)
+# mergedData %>% mutate(minutes = )
+```
+
+## Acknowledgements
+Praveen worked on determining what columns to join by, determining tidyness of data, and implementing the join and data wrangling.
+
+Sashank worked on acquiring the datasets, impleemtning data wrangling, and performing data visualization.
