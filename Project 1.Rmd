@@ -1,6 +1,8 @@
 ---
 title: "Project 1"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: "2022-10-21"
 ---
 ```{r global_options, include=FALSE}
@@ -299,4 +301,4 @@ theme_test()
 ## Acknowledgements
 Praveen worked on determining what columns to join by, determining tidyness of data, and implementing the join and data wrangling.
 
-Sashank worked on acquiring the datasets, implemtning data wrangling, and performing data visualization.
+Sashank worked on acquiring the datasets, impleemtning data wrangling, and performing data visualization.
