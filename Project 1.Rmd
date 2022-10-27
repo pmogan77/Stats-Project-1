@@ -47,6 +47,7 @@ continue to grow and expand over time.
 ## Importing Datasets
 ```{r}
 # Read both datasets from csv file
+setwd("C:/Users/prvn0/Documents/UTClasses/SDS321/Project 1")
 anime = read.csv("./Anime.csv", header = TRUE, sep = ",")
 MAL_ratings = read.csv("./MALratings.csv", header = TRUE, sep = ",")
 ```
@@ -111,31 +112,35 @@ View(mergedData)
 ```
 
 ## Wrangling
-One potential relationship we expect is that anime with a higher score (rating) tend to also place higher on the popularity list of anime.
-In other words, we expect the "best" anime to also be the most watched.
-
-Another relationship we hypothesize is that anime classified as TV will have a higher popularity than movies as they have plots that 
+One relationship we hypothesize is that anime classified as TV will have a higher popularity than movies as they have plots that 
 continue to grow and expand over time.
 ```{r}
-# Group by type of show
-getMinutes <- function(episodeLength) {
-    if(grepl("sec", episodeLength, fixed = TRUE)) {
-        0
-    } else if(grepl("hr", episodeLength, fixed = TRUE)) {
-        hourStop = gregexpr(" hr.", episodeLength)[[1]]
-        minStop = gregexpr(" min.", episodeLength)[[1]]
-        hours = strtoi(substring(episodeLength, 0, hourStop-1))
-        mins = strtoi(substring(episodeLength, hourStop+5, minStop-1))
-        mins + hours * 60
-    } else {
-        minStop = gregexpr(" min.", episodeLength)[[1]]
-        strtoi(substring(episodeLength, 0, minStop-1))
-    }
-}
+# Determine score by type of show (handles filter, group_by, summarise, arrange) + (categorical summary)
+mergedData %>% filter(Type != "Unknown") %>% group_by(Type) %>% summarise(avg_score = mean(Score.x, na.rm=TRUE)) %>% arrange(-avg_score)
 
-print(getMinutes("3 sec."))
-# mergedData %>% filter(Type != "Unknown") %>% group_by(Type) %>% summarise(avg_score = mean(Score.x, na.rm=TRUE)) %>% arrange(-avg_score)
-# mergedData %>% mutate(minutes = )
+# Determine which type of rating has the highest viewership (categorical summary)
+mergedData %>% group_by(Rating) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% slice(1:5)
+
+# Determine popularity of show by episode length (numerical summary)
+mergedData %>% group_by(Duration_Minutes) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% filter(!is.na(Duration_Minutes))
+
+# Determine popularity of show by number of episodes (numerical summary)
+mergedData %>% group_by(Episodes.x) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% filter(!is.na(Episodes.x))
+
+# Used to find total Binge Time (handles mutate and select)
+mergedBingeData = mergedData %>% select(ID, Title, Episodes.x, Episodes.y, Duration_Minutes, Members) %>% mutate(TotalBingeTime = Duration_Minutes * Episodes.x)
+View(mergedBingeData)
+
+# Determine which total show length has the most members
+bingeDataTable = mergedBingeData %>% group_by(TotalBingeTime) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% filter(!is.na(TotalBingeTime))
+kable(x = bingeDataTable %>% slice(1:20))
+```
+
+## Visualizations
+One potential relationship we expect is that anime with a higher score (rating) tend to also place higher on the popularity list of anime.
+In other words, we expect the "best" anime to also be the most watched.
+```{r}
+
 ```
 
 ## Acknowledgements
