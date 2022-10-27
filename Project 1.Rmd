@@ -26,18 +26,18 @@ colorize <- function(x, color = "cornflowerblue") {
 ```
 ## Praveen Mogan (pm32757), Sashank Meka (sm76742)
 ## A Data Driven Anime Analysis
-**Dataset description**
+**Dataset description**\
 The anime dataset has a list of anime, synonyms, name in Japanese, name in English, a synopsis, type, number of episodes, current airing status, and the start air date.
 We acquired this dataset on [Kaggle](https://www.kaggle.com/datasets/harits/anime-database-2022).
 
 The My Anime List dataset has a list of anime, genre, rank, popularity, score, number of episodes, episode length, and release date.
 We acquired this dataset on [Kaggle](https://www.kaggle.com/datasets/aliibrahim10/anime-ratings).
 
-**Why these datasets?**
+**Why these datasets?**\
 While both datasets come from My Anime List, each dataset contains different information web-scraped from the website. Consequently, we hope to combine
 both datasets to create a more cohesive picture of each anime and its characteristics.
 
-**Potential relationships**
+**Potential relationships**\
 One potential relationship we expect is that anime with a higher score (rating) tend to also place higher on the popularity list of anime.
 In other words, we expect the "best" anime to also be the most watched.
 
@@ -54,26 +54,33 @@ MAL_ratings = read.csv("./MALratings.csv", header = TRUE, sep = ",")
 ```
 
 ## Tidying Datasets
+**Tidy Analysis of Anime Dataset**\
 As both datasets are already tidy, we do not need to tidy either of them.
 With the anime dataset, we can see that each row represents one observation (anime). 
 Furthermore, each variable (title, sysnonyms, synopsis, etc.) has its own column.
 Finally, each variable (title, sysnonyms, synopsis, etc.) for each anime has its own, unique cell.
 
+**Tidy Analysis of MAL_Ratings Dataset**\
 Similarly, with the MAL_ratings dataset, we can see that each row represents one observation (anime). 
 Furthermore, each variable (title, popularity, score, etc.) has its own column.
 Finally, each variable (title, popularity, score, etc.) for each anime has its own, unique cell.
 
+**Next Steps for Tidying Data**\
 We will be returning to tidying functions later in the project.
+
+**Current Dataset Structure**\
 ```{r}
 # Check that both datasets are tidy
-head(anime)
-head(MAL_ratings)
+str(anime)
+str(MAL_ratings)
 ```
 
 ## Joining Datasets
+**Joining Criteria**\
 I joined the two datasets by the title column with an inner join. This means that the anime title must be in both datasets to create a row in the resulting dataset.
 This means that anime in one dataset and not in the other will not be recorded in the merged dataset.
 
+**Row Differences from Joining**\
 There are 21460 rows in the anime dataset.
 There are 20343 rows in the MAL_ratings dataset.
 There are 20156 rows in the merged dataset.
@@ -83,23 +90,28 @@ One issue with the decreased number is that we lose data about anime that only a
 However, there is some added security in that every row within the merged dataset will pull all corresponding information from both original datasets.
 This means using inner_join will decrease the number of columns with null values.
 
+**Row Summary from Joining**\
 The anime dataset has a list of anime, synonyms, name in Japanese, name in English, a synopsis, type, number of episodes, current airing status, and the start air date.
 The My Anime List dataset has a list of anime, genre, rank, popularity, score, number of episodes, episode length, and release date.
 The merged dataset has an ID, title, synonyms, Japanese name, English name, synopsis, type, episodes.x, status, start_aired, end_aired, premeried, broadcast, producers, licensors, studios, source,
 genres.x, themes, demographics, duration_minutes, rating, score.x, scored users, ranked, popularity.x, members, favorites, genres.y, rank, popularity.y, score.y, episodes.y, episode.length, and release date.
 
+**Cokumn Differences from Joining**\
 The columns in the merged dataset is simply the addition of the anime dataset and the MAL_ratings dataset.
 The anime dataset has 28 columns and the MAL_ratings dataset has 8 columns. This creates 36 columns, but since we merged by the title, the resulting dataset has 35 columns.
+
+**Current Dataset Row + Column**\
 ```{r}
 # Determine number of rows in each dataset
 anime %>% nrow()
 MAL_ratings %>% nrow()
 
 # Determine number of columns in each dataset
-str(anime)
-str(MAL_ratings)
+anime %>% ncol()
+MAL_ratings %>% ncol()
 ```
 
+**Merged Dataset Structure**\
 ```{r}
 # Complete inner join
 mergedData = inner_join(anime, MAL_ratings, by="Title")
@@ -109,10 +121,10 @@ str(mergedData)
 
 # Determine number of rows in merged datatset
 mergedData %>% nrow()
-head(mergedData)
 ```
 
 ## Wrangling
+**Score vs. Type of Anime**\
 One relationship we hypothesize is that anime classified as TV will have a higher popularity than movies as they have plots that 
 continue to grow and expand over time.
 
@@ -121,24 +133,28 @@ The score for each piece of media is given from a score from 0 (worst) to 10 (be
 Ultimately, the best rated media overall is from the TV category, with an average score of 6.85.
 
 ```{r}
-# Determine score by type of show (handles filter, group_by, summarise, arrange) + (categorical summary)
+# Determine score by type of show (handles filter, group_by, summarise,
+# arrange) + (categorical summary)
 # Calculates the average viewer score for each type of media, that is known,
 # sorts by score in descending order
 mergedData %>% filter(Type != "Unknown") %>% group_by(Type) %>%
 summarise(avg_score = mean(Score.x, na.rm=TRUE)) %>% arrange(-avg_score)
 ```
 
+**Show Rating vs. Popularity**\
 In this table, we determine the most popular media based on ratings (PG-13, R, R+, G, PG, etc.).
 The popularity of a piece of media is determined by the total number of members who have added a piece of media from the category to their list on MyAnimeList.net.
 Ultimately, the most popular type of content is rated PG-13; However, this might be a result of the majority of content being produced being rated PG-13.
 ```{r}
-# Determine which type of rating has the highest viewership (categorical summary)
+# Determine which type of rating has the highest viewership 
+# (categorical summary)
 # Calculates the tatal members for each rating type, sorts by
 # total members in descending order and shows the top 5
 mergedData %>% group_by(Rating) %>%
 summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% slice(1:5)
 ```
 
+**Epsiode Duration vs. Popularity**\
 In this table, we determine the most popular media based on the duration of each piece of media.
 Once again, the popularity of a piece of media is determined by the total number of members who have added a piece of media from the category to their list on MyAnimeList.net.
 Ultimately, the most popular media has a durationo of 24 minutes. It also appears that the top 6 most popular duration are within a relatively similar cohort.
@@ -153,6 +169,7 @@ summarise(TotalMembers = sum(Members)) %>%
 arrange(-TotalMembers) %>% filter(!is.na(Duration_Minutes))
 ```
 
+**Number of Episodes vs. Popularity**\
 In this table, we determinet the most popular media based on the number of episodes in it.
 Once again, the popularity of a piece of media is determined by the total number of members who have added a piece of media from the category to their list on MyAnimeList.net.
 Ultimately, the most popular media has 12 episodes in it. However, there is now greater variration in the top few entries. For instance, second place has 1 episode and 4th place has 24 episodes.
@@ -160,20 +177,22 @@ The 1 episode could be explained by movies which are tagged as having one episod
 Thus, this could skew the data.
 ```{r}
 # Determine popularity of show by number of episodes (numerical summary)
-# Calculates the tatal members for each number of episodes, sorts by 
-# total members in descending order and removes all NA episode numbers 
+# Calculates the tatal members for each number of episodes, sorts by
+# total members in descending order and removes all NA episode numbers
 mergedData %>% group_by(Episodes.x) %>%
 summarise(TotalMembers = sum(Members)) %>%
 arrange(-TotalMembers) %>%
 filter(!is.na(Episodes.x))
 ```
 
+**Total Binge Time Setup**\
 This dataframe contains a new column storing the number of minutes needed to binge the piece of media.
 For a movie, this would simply its duration. However, for TV shows with multiple seasons, this would be the total number of episodes times the average time for each episode in minutes.
 While this data is not being analyzed here, it will be in the next table.
 ```{r}
 # Used to find total Binge Time (handles mutate and select)
-# Calculates the total binge time from the numnber of episodes and average duration
+# Calculates the total binge time from the numnber of episodes
+# and average duration
 # Selects only the necessary columns for future data analysis
 mergedBingeData = mergedData %>%
 select(ID, Title, Episodes.x, Episodes.y, Duration_Minutes, Members) %>%
@@ -181,6 +200,7 @@ mutate(TotalBingeTime = Duration_Minutes * Episodes.x)
 head(mergedBingeData)
 ```
 
+**Total Binge Time vs. Popularity**\
 In this table, we determinet the most popular media based on the number of minutes needed to binge it.
 Once again, the popularity of a piece of media is determined by the total number of members who have added a piece of media from the category to their list on MyAnimeList.net.
 Ultimately, the most popular piece of media has a total binge time of 288 minutes. There also appears to be a similar poplarity among other pieces of media with similar binge times, such as 276 and 312 minutes.
@@ -197,15 +217,19 @@ filter(!is.na(TotalBingeTime))
 # Creates a table using the kable package of the first 20 entries
 kable(x = bingeDataTable %>% slice(1:20))
 ```
+
+**Licensors and Producers vs. Popularity**\
 In this series of table modifications, we explore tidy and untidy data. Specifically, we look at the popularity of a piecce of content based on the producers and licensors of the piece of media.
 We first obtain this data in a tidy format, noticing how each producer and licensor combination is considered a new entry in the table.
 We also notice that production studios such as Production IG, Aniplex, and Dentsu commonly appear in the most popular forms of media.
 We also notice that Licensors such as Funimation and Aniplex commonly appear in the most popular forms of media.
 
+**Untidy Table**\
 However, we now switch this data into an untidy form for easier cross referencing/comparision. 
 This is done with the pivot_wider command to generate a table where a pair of Licensors and Producers bisect to display its popularity in total members.
 The values for each intersection between producer and licensor is the total number of members. The names for the new column headers generated come from the Licensors.
 
+**Retidy Table**\
 To go back to the original, tidy dataset, we use the pivot_longer command while renaming the columns. 
 This made the pairing of Producers and Licensors in the rows, as opposed to being in the column headers.
 ```{r}
@@ -232,13 +256,47 @@ values_to = "TotalMembers") %>% filter(!is.na(TotalMembers))
 ```
 
 ## Visualizations
+**Score vs. Popularity**\
 One potential relationship we expect is that anime with a higher score (rating) tend to also place higher on the popularity list of anime.
-In other words, we expect the "best" anime to also be the most watched.
-```{r}
+In other words, we expect the "best" anime to also be the most watched. Popularity in this case is measured by the number of users which 
+have added the anime to their list (i.e. members).
 
+In this graph, we plot the number of members againt the Score for each anime.
+Through this graph, we are able to conclude that the score does have a direct, positive corrrelation with the popularity of an anime.
+We use the score as the higher scores correlate with 
+```{r}
+# Plots the Number of members against the score for each anime
+# Sets x, y, and main labels and updates the theme
+ggplot(mergedData, aes(x = Score.x, y = Members), alpha = .2) +
+geom_point() + scale_y_log10() +
+labs(x = "Scores (Out of 10)", y = "Popularity (number of members)",
+title = "Popularity (number of members) vs. Score (Out of 10)") +
+theme_test()
+```
+
+**Total Binge Time vs. Popularity**\
+In this graph, we plot the number of members against the total binge time for each show. There appears to be two large spikes around
+300 and 600 as we noticed before. The ends of the graph appear to have fewer number of members. This could be due to the lack of popularity from
+small and really long shows. Another theory could be that shows are often not produced in such small or short quantities, therefore there is a lack of 
+data points to describe how popular the show is.
+```{r}
+# Graph popularity over binge time
+# Correlates the Total Binge Time to the Total Number of Members
+bingeGraphData = mergedBingeData %>%
+group_by(TotalBingeTime) %>%
+summarise(TotalMembers = sum(Members))
+
+# Plots the Total Members against the Total Binge Time
+# Sets x, y, and main labels and updates the theme
+ggplot(bingeGraphData) +
+geom_density(aes(x = TotalBingeTime, y = TotalMembers),
+stat = "identity") + scale_x_log10() + scale_y_sqrt() +
+labs(x = "Total Binge Time (minutes)", y = "Popularity (number of members)",
+title = "Popularity (number of members) vs. Total Binge Time (minutes)") +
+theme_test()
 ```
 
 ## Acknowledgements
 Praveen worked on determining what columns to join by, determining tidyness of data, and implementing the join and data wrangling.
 
-Sashank worked on acquiring the datasets, impleemtning data wrangling, and performing data visualization.
+Sashank worked on acquiring the datasets, implemtning data wrangling, and performing data visualization.
