@@ -114,26 +114,77 @@ View(mergedData)
 ## Wrangling
 One relationship we hypothesize is that anime classified as TV will have a higher popularity than movies as they have plots that 
 continue to grow and expand over time.
+
+In this table, we determine the average score given to each type of anime-based media (TV, Special, Movie, OVA, ONA, Music, etc.).
+The score for each piece of media is given from a score from 0 (worst) to 10 (best).
+Ultimately, the best rated media overall is from the TV category, with an average score of 6.85.
+
 ```{r}
 # Determine score by type of show (handles filter, group_by, summarise, arrange) + (categorical summary)
 mergedData %>% filter(Type != "Unknown") %>% group_by(Type) %>% summarise(avg_score = mean(Score.x, na.rm=TRUE)) %>% arrange(-avg_score)
+```
 
+In this table, we determine the most popular media based on ratings (PG-13, R, R+, G, PG, etc.).
+The popularity of a piece of media is determined by the total number of members who have added a piece of media from the category to their list on MyAnimeList.net.
+Ultimately, the most popular type of content is rated PG-13; However, this might be a result of the majority of content being produced being rated PG-13.
+```{r}
 # Determine which type of rating has the highest viewership (categorical summary)
 mergedData %>% group_by(Rating) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% slice(1:5)
+```
 
+In this table, we determine the most popular media based on the duration of each piece of media.
+Once again, the popularity of a piece of media is determined by the total number of members who have added a piece of media from the category to their list on MyAnimeList.net.
+Ultimately, the most popular media has a durationo of 24 minutes. It also appears that the top 6 most popular duration are within a relatively similar cohort.
+Yet again, however, this might be a result of producers creating content that is often near 24 minutes, regardless of popularity.
+```{r}
 # Determine popularity of show by episode length (numerical summary)
 mergedData %>% group_by(Duration_Minutes) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% filter(!is.na(Duration_Minutes))
+```
 
+In this table, we determinet the most popular media based on the number of episodes in it.
+Once again, the popularity of a piece of media is determined by the total number of members who have added a piece of media from the category to their list on MyAnimeList.net.
+Ultimately, the most popular media has 12 episodes in it. However, there is now greater variration in the top few entries. For instance, second place has 1 episode and 4th place has 24 episodes.
+The 1 episode could be explained by movies which are tagged as having one episode. While actual shows are subdivided by the number of episodes, movies are all put together into the category of 1 episode.
+Thus, this could skew the data.
+```{r}
 # Determine popularity of show by number of episodes (numerical summary)
 mergedData %>% group_by(Episodes.x) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% filter(!is.na(Episodes.x))
+```
 
+This dataframe contains a new column storing the number of minutes needed to binge the piece of media.
+For a movie, this would simply its duration. However, for TV shows with multiple seasons, this would be the total number of episodes times the average time for each episode in minutes.
+While this data is not being analyzed here, it will be in the next table.
+```{r}
 # Used to find total Binge Time (handles mutate and select)
 mergedBingeData = mergedData %>% select(ID, Title, Episodes.x, Episodes.y, Duration_Minutes, Members) %>% mutate(TotalBingeTime = Duration_Minutes * Episodes.x)
-View(mergedBingeData)
+head(mergedBingeData)
+```
 
+In this table, we determinet the most popular media based on the number of minutes needed to binge it.
+Once again, the popularity of a piece of media is determined by the total number of members who have added a piece of media from the category to their list on MyAnimeList.net.
+Ultimately, the most popular piece of media has a total binge time of 288 minutes. There also appears to be a similar poplarity among other pieces of media with similar binge times, such as 276 and 312 minutes.
+Howeber, tehre appears to be another big center around 600 minutes. This could meant there is a bimodal distribution. However, a bar graph would better reveal if this assumption is supported.
+```{r}
 # Determine which total show length has the most members
 bingeDataTable = mergedBingeData %>% group_by(TotalBingeTime) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% filter(!is.na(TotalBingeTime))
 kable(x = bingeDataTable %>% slice(1:20))
+```
+In this series of table modifications, we explore tidy and untidy data. Specifically, we look at the popularity of a piecce of content based on the producers and licensors of the piece of media.
+We first obtain this data in a tidy format, noticing how each producer and licensor combination is considered a new entry in the table.
+We also notice that production studios such as Production IG, Aniplex, and Dentsu commonly appear in the most popular forms of media.
+We also notice that Licensors such as Funimation and Aniplex commonly appear in the most popular forms of media.
+
+However, we now switch this data into an untidy form for easier cross referencing/comparision. 
+This is done with the pivot_wider command to generate a table where a pair of Licensors and Producers bisect to display its popularity in total members.
+
+To go back to the original, tidy dataset, we use the pivot_longer command while renaming the columns.
+```{r}
+# Determine which combination of licensors and producers have the most members (uses pivot_longer and pivot_wider)
+producerLicensorData = mergedData %>% group_by(Producers, Licensors) %>% summarise(TotalMembers = sum(Members)) %>% arrange(-TotalMembers) %>% filter(!is.na(Producers) && !is.na(Licensors) && Licensors != "Unknown" && Producers != "Unknown")
+producerLicensorData
+producerLicensorDataUntidy = producerLicensorData %>% pivot_wider(values_from = TotalMembers, names_from = Licensors)
+producerLicensorDataUntidy
+producerLicensorDataUntidy %>% pivot_longer(producerLicensorData$Licensors, names_to = "Licensors", values_to = "TotalMembers") %>% filter(!is.na(TotalMembers))
 ```
 
 ## Visualizations
